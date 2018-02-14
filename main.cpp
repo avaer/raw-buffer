@@ -1,7 +1,10 @@
 #include <v8.h>
 #include <nan.h>
 
+#include <memory>
+
 using namespace v8;
+using namespace std;
 
 #define JS_STR(...) Nan::New<v8::String>(__VA_ARGS__).ToLocalChecked()
 #define JS_INT(val) Nan::New<v8::Integer>(val)
@@ -22,6 +25,7 @@ public:
     ctor->SetClassName(JS_STR("RawBuffer"));
     Nan::SetPrototypeMethod(ctor, "getArrayBuffer", RawBuffer::GetArrayBuffer);
     Nan::SetPrototypeMethod(ctor, "toAddress", RawBuffer::ToAddress);
+    Nan::SetPrototypeMethod(ctor, "destroy", RawBuffer::Destroy);
 
     // prototype
     Local<ObjectTemplate> proto = ctor->PrototypeTemplate();
@@ -59,27 +63,40 @@ protected:
 
     Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
 
-    info.GetReturnValue().Set(Nan::New<Integer>((uint32_t)arrayBuffer->ByteLength()));
+    if (!arrayBuffer.IsEmpty()) {
+      info.GetReturnValue().Set(Nan::New<Integer>((uint32_t)arrayBuffer->ByteLength()));
+    } else {
+      info.GetReturnValue().Set(Nan::Null());
+    }
   }
   static NAN_METHOD(GetArrayBuffer) {
     RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
 
     Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
 
-    info.GetReturnValue().Set(arrayBuffer);
+    if (!arrayBuffer.IsEmpty()) {
+      info.GetReturnValue().Set(arrayBuffer);
+    } else {
+      info.GetReturnValue().Set(Nan::Null());
+    }
   }
   static NAN_METHOD(ToAddress) {
     RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
 
     Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
-    uintptr_t address = (uintptr_t)arrayBuffer->GetContents().Data();
-    size_t size = arrayBuffer->ByteLength();
 
-    Local<Array> array = Nan::New<Array>(2);
-    array->Set(0, Nan::New<Number>(static_cast<double>(address)));
-    array->Set(1, Nan::New<Number>(static_cast<double>(size)));
+    if (!arrayBuffer.IsEmpty()) {
+      uintptr_t address = (uintptr_t)arrayBuffer->GetContents().Data();
+      size_t size = arrayBuffer->ByteLength();
 
-    info.GetReturnValue().Set(array);
+      Local<Array> array = Nan::New<Array>(2);
+      array->Set(0, Nan::New<Number>(static_cast<double>(address)));
+      array->Set(1, Nan::New<Number>(static_cast<double>(size)));
+
+      info.GetReturnValue().Set(array);
+    } else {
+      info.GetReturnValue().Set(Nan::Null());
+    }
   }
   static NAN_METHOD(FromAddress) {
     Local<Array> array = Local<Array>::Cast(info[0]);
@@ -96,9 +113,18 @@ protected:
 
     info.GetReturnValue().Set(rawBufferObj);
   }
+  static NAN_METHOD(Destroy) {
+    RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
+
+    Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
+    if (!arrayBuffer.IsEmpty() && arrayBuffer->IsExternal()) {
+      unique_ptr<unsigned char[]> data((unsigned char *)arrayBuffer->GetContents().Data());
+      rawBuffer->arrayBuffer.Reset();
+    }
+  }
 
   RawBuffer() : arrayBuffer(Isolate::GetCurrent(), ArrayBuffer::New(Isolate::GetCurrent(), 0)) {}
-  RawBuffer(size_t size) : arrayBuffer(Isolate::GetCurrent(), ArrayBuffer::New(Isolate::GetCurrent(), size)) {}
+  RawBuffer(size_t size) : arrayBuffer(Isolate::GetCurrent(), ArrayBuffer::New(Isolate::GetCurrent(), new unsigned char[size], size)) {}
   RawBuffer(Local<ArrayBuffer> arrayBuffer) : arrayBuffer(Isolate::GetCurrent(), arrayBuffer) {}
 
 private:
