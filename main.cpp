@@ -1,10 +1,7 @@
 #include <v8.h>
 #include <nan.h>
 
-#include <memory>
-
 using namespace v8;
-using namespace std;
 
 #define JS_STR(...) Nan::New<v8::String>(__VA_ARGS__).ToLocalChecked()
 #define JS_INT(val) Nan::New<v8::Integer>(val)
@@ -25,9 +22,9 @@ public:
     Local<FunctionTemplate> ctor = Nan::New<FunctionTemplate>(New);
     ctor->InstanceTemplate()->SetInternalFieldCount(1);
     ctor->SetClassName(JS_STR("RawBuffer"));
-    Nan::SetPrototypeMethod(ctor, "equals", RawBuffer::Equals);
     Nan::SetPrototypeMethod(ctor, "getArrayBuffer", RawBuffer::GetArrayBuffer);
     Nan::SetPrototypeMethod(ctor, "toAddress", RawBuffer::ToAddress);
+    Nan::SetPrototypeMethod(ctor, "peekAddress", RawBuffer::PeekAddress);
     Nan::SetPrototypeMethod(ctor, "destroy", RawBuffer::Destroy);
 
     // prototype
@@ -78,17 +75,6 @@ protected:
       info.GetReturnValue().Set(Nan::Null());
     }
   }
-  static NAN_METHOD(Equals) {
-    RawBuffer *rawBuffer1 = ObjectWrap::Unwrap<RawBuffer>(info.This());
-    Local<ArrayBuffer> arrayBuffer1 = Nan::New(rawBuffer1->arrayBuffer);
-    uintptr_t address1 = (uintptr_t)arrayBuffer1->GetContents().Data();
-
-    RawBuffer *rawBuffer2 = ObjectWrap::Unwrap<RawBuffer>(info[0]->ToObject());
-    Local<ArrayBuffer> arrayBuffer2 = Nan::New(rawBuffer2->arrayBuffer);
-    uintptr_t address2 = (uintptr_t)arrayBuffer2->GetContents().Data();
-
-    info.GetReturnValue().Set(Nan::New<Boolean>(address1 == address2));
-  }
   static NAN_METHOD(GetArrayBuffer) {
     RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
 
@@ -113,7 +99,21 @@ protected:
       array->Set(0, Nan::New<Number>(*reinterpret_cast<double*>(&address)));
       array->Set(1, Nan::New<Number>(*reinterpret_cast<double*>(&size)));
 
+      rawBuffer->arrayBuffer.Reset();
+
       info.GetReturnValue().Set(array);
+    } else {
+      info.GetReturnValue().Set(Nan::Null());
+    }
+  }
+  static NAN_METHOD(PeekAddress) {
+    RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
+
+    if (!rawBuffer->arrayBuffer.IsEmpty()) {
+      Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
+      uintptr_t address = (uintptr_t)arrayBuffer->GetContents().Data();
+
+      info.GetReturnValue().Set(Nan::New<Number>(*reinterpret_cast<double*>(&address)));
     } else {
       info.GetReturnValue().Set(Nan::Null());
     }
@@ -131,7 +131,7 @@ protected:
     Local<Value> argv[] = {
       arrayBuffer,
     };
-    Local<Value> rawBufferObj = rawBufferConstructor->NewInstance(sizeof(argv) / sizeof(argv[0]), argv);
+    Local<Value> rawBufferObj = rawBufferConstructor->NewInstance(sizeof(argv)/sizeof(argv[0]), argv);
 
     info.GetReturnValue().Set(rawBufferObj);
   }
@@ -140,14 +140,19 @@ protected:
 
     Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
     if (!arrayBuffer.IsEmpty() && arrayBuffer->IsExternal()) {
-      unique_ptr<unsigned char[]> data((unsigned char *)arrayBuffer->GetContents().Data());
+      free(arrayBuffer->GetContents().Data());
       rawBuffer->arrayBuffer.Reset();
     }
   }
 
-  RawBuffer() : arrayBuffer(Isolate::GetCurrent(), ArrayBuffer::New(Isolate::GetCurrent(), 0)) {}
   RawBuffer(size_t size) : arrayBuffer(Isolate::GetCurrent(), ArrayBuffer::New(Isolate::GetCurrent(), new unsigned char[size], size)) {}
   RawBuffer(Local<ArrayBuffer> arrayBuffer) : arrayBuffer(Isolate::GetCurrent(), arrayBuffer) {}
+  ~RawBuffer() {
+    Local<ArrayBuffer> arrayBuffer = Nan::New(this->arrayBuffer);
+    if (!arrayBuffer.IsEmpty() && arrayBuffer->IsExternal()) {
+      free(arrayBuffer->GetContents().Data());
+    }
+  }
 
 private:
   Persistent<ArrayBuffer> arrayBuffer;
