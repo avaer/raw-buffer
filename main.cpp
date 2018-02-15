@@ -25,7 +25,6 @@ public:
     Nan::SetPrototypeMethod(ctor, "getArrayBuffer", RawBuffer::GetArrayBuffer);
     Nan::SetPrototypeMethod(ctor, "toAddress", RawBuffer::ToAddress);
     Nan::SetPrototypeMethod(ctor, "peekAddress", RawBuffer::PeekAddress);
-    Nan::SetPrototypeMethod(ctor, "destroy", RawBuffer::Destroy);
 
     // prototype
     Local<ObjectTemplate> proto = ctor->PrototypeTemplate();
@@ -134,15 +133,6 @@ protected:
     Local<Value> rawBufferObj = rawBufferConstructor->NewInstance(sizeof(argv)/sizeof(argv[0]), argv);
 
     info.GetReturnValue().Set(rawBufferObj);
-  }
-  static NAN_METHOD(Destroy) {
-    RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
-
-    Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
-    if (!arrayBuffer.IsEmpty() && arrayBuffer->IsExternal()) {
-      free(arrayBuffer->GetContents().Data());
-      rawBuffer->arrayBuffer.Reset();
-    }
   }
 
   RawBuffer(size_t size) : arrayBuffer(Isolate::GetCurrent(), ArrayBuffer::New(Isolate::GetCurrent(), new unsigned char[size], size)) {}

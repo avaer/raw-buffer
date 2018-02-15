@@ -10,6 +10,4 @@ r2 = RawBuffer.fromAddress(a2);
 
 console.log('result 1', r1.peekAddress(), r2.peekAddress(), new Float32Array(r2.getArrayBuffer()), r2.length);
 
-r2.destroy();
-
 console.log('result 2', r2.getArrayBuffer(), r2.length);
