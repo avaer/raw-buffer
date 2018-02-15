@@ -90,8 +90,8 @@ protected:
       size_t size = arrayBuffer->ByteLength();
 
       Local<Array> array = Nan::New<Array>(2);
-      array->Set(0, Nan::New<Number>(static_cast<double>(address)));
-      array->Set(1, Nan::New<Number>(static_cast<double>(size)));
+      array->Set(0, Nan::New<Number>(*reinterpret_cast<double*>(&address)));
+      array->Set(1, Nan::New<Number>(*reinterpret_cast<double*>(&size)));
 
       info.GetReturnValue().Set(array);
     } else {
@@ -101,8 +101,10 @@ protected:
   static NAN_METHOD(FromAddress) {
     Local<Array> array = Local<Array>::Cast(info[0]);
 
-    uintptr_t address = static_cast<uintptr_t>(array->Get(0)->NumberValue());
-    size_t size = static_cast<uintptr_t>(array->Get(1)->NumberValue());
+    double addressValue = array->Get(0)->NumberValue();
+    uintptr_t address = *reinterpret_cast<uintptr_t*>(&addressValue);
+    double sizeValue = array->Get(1)->NumberValue();
+    size_t size = *reinterpret_cast<uintptr_t*>(&sizeValue);
     Local<ArrayBuffer> arrayBuffer = ArrayBuffer::New(Isolate::GetCurrent(), (void *)address, size);
 
     Local<Function> rawBufferConstructor = Local<Function>::Cast(info.Callee()->Get(JS_STR("RawBuffer")));
