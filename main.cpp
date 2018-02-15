@@ -14,6 +14,8 @@ using namespace std;
 
 namespace rawBuffer {
 
+void Init(Handle<Object> exports);
+
 class RawBuffer : public Nan::ObjectWrap {
 public:
   static Handle<Object> Initialize() {
@@ -36,6 +38,8 @@ public:
     Local<Function> fromAddressFn = Nan::New<Function>(RawBuffer::FromAddress);
     fromAddressFn->Set(JS_STR("RawBuffer"), ctorFn);
     ctorFn->Set(JS_STR("fromAddress"), fromAddressFn);
+    uintptr_t initFunctionAddress = (uintptr_t)Init;
+    ctorFn->Set(JS_STR("initFunctionAddress"), Nan::New<Number>(*reinterpret_cast<double*>(&initFunctionAddress)));
 
     return scope.Escape(ctorFn);
   }
