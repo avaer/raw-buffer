@@ -50,7 +50,11 @@ protected:
       RawBuffer *rawBuffer = new RawBuffer(info[0]->Uint32Value());
       rawBuffer->Wrap(rawBufferObj);
     } else if (info[0]->IsArrayBuffer()) {
-      RawBuffer *rawBuffer = new RawBuffer(Local<ArrayBuffer>::Cast(info[0]));
+      Local<ArrayBuffer> arrayBuffer = Local<ArrayBuffer>::Cast(info[0]);
+      if (!arrayBuffer->IsExternal()) {
+        arrayBuffer->Externalize();
+      }
+      RawBuffer *rawBuffer = new RawBuffer(arrayBuffer);
       rawBuffer->Wrap(rawBufferObj);
     } else {
       Nan::ThrowError("Invalid arguments");
