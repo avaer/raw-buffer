@@ -25,6 +25,7 @@ public:
     Local<FunctionTemplate> ctor = Nan::New<FunctionTemplate>(New);
     ctor->InstanceTemplate()->SetInternalFieldCount(1);
     ctor->SetClassName(JS_STR("RawBuffer"));
+    Nan::SetPrototypeMethod(ctor, "equals", RawBuffer::Equals);
     Nan::SetPrototypeMethod(ctor, "getArrayBuffer", RawBuffer::GetArrayBuffer);
     Nan::SetPrototypeMethod(ctor, "toAddress", RawBuffer::ToAddress);
     Nan::SetPrototypeMethod(ctor, "destroy", RawBuffer::Destroy);
@@ -76,6 +77,17 @@ protected:
     } else {
       info.GetReturnValue().Set(Nan::Null());
     }
+  }
+  static NAN_METHOD(Equals) {
+    RawBuffer *rawBuffer1 = ObjectWrap::Unwrap<RawBuffer>(info.This());
+    Local<ArrayBuffer> arrayBuffer1 = Nan::New(rawBuffer1->arrayBuffer);
+    uintptr_t address1 = (uintptr_t)arrayBuffer1->GetContents().Data();
+
+    RawBuffer *rawBuffer2 = ObjectWrap::Unwrap<RawBuffer>(info[0]->ToObject());
+    Local<ArrayBuffer> arrayBuffer2 = Nan::New(rawBuffer2->arrayBuffer);
+    uintptr_t address2 = (uintptr_t)arrayBuffer2->GetContents().Data();
+
+    info.GetReturnValue().Set(Nan::New<Boolean>(address1 == address2));
   }
   static NAN_METHOD(GetArrayBuffer) {
     RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
