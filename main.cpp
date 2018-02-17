@@ -24,7 +24,7 @@ public:
     ctor->SetClassName(JS_STR("RawBuffer"));
     Nan::SetPrototypeMethod(ctor, "getArrayBuffer", RawBuffer::GetArrayBuffer);
     Nan::SetPrototypeMethod(ctor, "toAddress", RawBuffer::ToAddress);
-    Nan::SetPrototypeMethod(ctor, "peekAddress", RawBuffer::PeekAddress);
+    Nan::SetPrototypeMethod(ctor, "equals", RawBuffer::Equals);
 
     // prototype
     Local<ObjectTemplate> proto = ctor->PrototypeTemplate();
@@ -101,16 +101,19 @@ protected:
       info.GetReturnValue().Set(Nan::Null());
     }
   }
-  static NAN_METHOD(PeekAddress) {
-    RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
+  static NAN_METHOD(Equals) {
+    if (info[0]->IsArray()) {
+      Local<Array> array = Local<Array>::Cast(info[0]);
 
-    if (!rawBuffer->arrayBuffer.IsEmpty()) {
-      Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
-      uintptr_t address = (uintptr_t)arrayBuffer->GetContents().Data();
+      if (array->Get(0)->IsNumber() && array->Get(1)->IsNumber()) {
+        RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
 
-      info.GetReturnValue().Set(Nan::New<Number>(*reinterpret_cast<double*>(&address)));
+        info.GetReturnValue().Set(Nan::New<Boolean>(array->Get(0)->Uint32Value() == (uint32_t)(rawBuffer->address >> 32) && array->Get(1)->Uint32Value() == (uint32_t)(rawBuffer->address & 0xFFFFFFFF)));
+      } else {
+        info.GetReturnValue().Set(Nan::New<Boolean>(false));
+      }
     } else {
-      info.GetReturnValue().Set(Nan::Null());
+      info.GetReturnValue().Set(Nan::New<Boolean>(false));
     }
   }
   static NAN_METHOD(FromAddress) {
