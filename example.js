@@ -8,6 +8,10 @@ s = JSON.stringify(a1);
 a2 = JSON.parse(s);
 r2 = RawBuffer.fromAddress(a2);
 
-console.log('result 1', r1.peekAddress(), r2.peekAddress(), new Float32Array(r2.getArrayBuffer()), r2.length);
+console.log('result 1', a2, r2.equals(a2), new Float32Array(r2.getArrayBuffer()), r2.length);
 
 console.log('result 2', r2.getArrayBuffer(), r2.length);
+
+r2.detach();
+
+console.log('result 3', r2.getArrayBuffer(), r2.length);
