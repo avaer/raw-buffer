@@ -24,6 +24,7 @@ public:
     ctor->SetClassName(JS_STR("RawBuffer"));
     Nan::SetPrototypeMethod(ctor, "getArrayBuffer", RawBuffer::GetArrayBuffer);
     Nan::SetPrototypeMethod(ctor, "toAddress", RawBuffer::ToAddress);
+    Nan::SetPrototypeMethod(ctor, "detach", RawBuffer::Detach);
     Nan::SetPrototypeMethod(ctor, "equals", RawBuffer::Equals);
 
     // prototype
@@ -99,6 +100,15 @@ protected:
       info.GetReturnValue().Set(array);
     } else {
       info.GetReturnValue().Set(Nan::Null());
+    }
+  }
+  static NAN_METHOD(Detach) {
+    RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
+
+    if (rawBuffer->owned) {
+      rawBuffer->address = 0;
+      rawBuffer->size = 0;
+      rawBuffer->owned = false;
     }
   }
   static NAN_METHOD(Equals) {
