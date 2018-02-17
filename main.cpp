@@ -47,10 +47,14 @@ protected:
 
     Local<Object> rawBufferObj = info.This();
 
-    if (info[0]->IsNumber()) {
-      RawBuffer *rawBuffer = new RawBuffer(info[0]->Uint32Value());
+    if (info[0]->IsNumber() && info[1]->IsNumber() && info[2]->IsNumber() && info[3]->IsNumber()) {
+      uintptr_t address = ((uint64_t)info[0]->Uint32Value() << 32) | ((uint64_t)info[1]->Uint32Value());
+      size_t size = ((uint64_t)info[2]->Uint32Value() << 32) | ((uint64_t)info[3]->Uint32Value());
+      
+      RawBuffer *rawBuffer = new RawBuffer(address, size);
       rawBuffer->Wrap(rawBufferObj);
     } else if (info[0]->IsArrayBuffer()) {
+
       Local<ArrayBuffer> arrayBuffer = Local<ArrayBuffer>::Cast(info[0]);
       if (!arrayBuffer->IsExternal()) {
         arrayBuffer->Externalize();
@@ -66,20 +70,13 @@ protected:
   static NAN_GETTER(Length) {
     RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
 
-    Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
-
-    if (!arrayBuffer.IsEmpty()) {
-      info.GetReturnValue().Set(Nan::New<Integer>((uint32_t)arrayBuffer->ByteLength()));
-    } else {
-      info.GetReturnValue().Set(Nan::Null());
-    }
+    info.GetReturnValue().Set(Nan::New<Integer>((uint32_t)rawBuffer->size));
   }
   static NAN_METHOD(GetArrayBuffer) {
     RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
 
-    Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
-
-    if (!arrayBuffer.IsEmpty()) {
+    if (rawBuffer->owned) {
+      Local<ArrayBuffer> arrayBuffer = ArrayBuffer::New(Isolate::GetCurrent(), (void *)rawBuffer->address, rawBuffer->size);
       info.GetReturnValue().Set(arrayBuffer);
     } else {
       info.GetReturnValue().Set(Nan::Null());
@@ -88,17 +85,16 @@ protected:
   static NAN_METHOD(ToAddress) {
     RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
 
-    Local<ArrayBuffer> arrayBuffer = Nan::New(rawBuffer->arrayBuffer);
+    if (rawBuffer->owned) {
+      Local<Array> array = Nan::New<Array>(4);
+      array->Set(0, Nan::New<Integer>((uint32_t)(rawBuffer->address >> 32)));
+      array->Set(1, Nan::New<Integer>((uint32_t)(rawBuffer->address & 0xFFFFFFFF)));
+      array->Set(2, Nan::New<Integer>((uint32_t)(rawBuffer->size >> 32)));
+      array->Set(3, Nan::New<Integer>((uint32_t)(rawBuffer->size & 0xFFFFFFFF)));
 
-    if (!arrayBuffer.IsEmpty()) {
-      uintptr_t address = (uintptr_t)arrayBuffer->GetContents().Data();
-      size_t size = arrayBuffer->ByteLength();
-
-      Local<Array> array = Nan::New<Array>(2);
-      array->Set(0, Nan::New<Number>(*reinterpret_cast<double*>(&address)));
-      array->Set(1, Nan::New<Number>(*reinterpret_cast<double*>(&size)));
-
-      rawBuffer->arrayBuffer.Reset();
+      rawBuffer->address = 0;
+      rawBuffer->size = 0;
+      rawBuffer->owned = false;
 
       info.GetReturnValue().Set(array);
     } else {
@@ -119,33 +115,31 @@ protected:
   }
   static NAN_METHOD(FromAddress) {
     Local<Array> array = Local<Array>::Cast(info[0]);
-
-    double addressValue = array->Get(0)->NumberValue();
-    uintptr_t address = *reinterpret_cast<uintptr_t*>(&addressValue);
-    double sizeValue = array->Get(1)->NumberValue();
-    size_t size = *reinterpret_cast<uintptr_t*>(&sizeValue);
-    Local<ArrayBuffer> arrayBuffer = ArrayBuffer::New(Isolate::GetCurrent(), (void *)address, size);
-
+    
     Local<Function> rawBufferConstructor = Local<Function>::Cast(info.Callee()->Get(JS_STR("RawBuffer")));
     Local<Value> argv[] = {
-      arrayBuffer,
+      array->Get(0),
+      array->Get(1),
+      array->Get(2),
+      array->Get(3),
     };
     Local<Value> rawBufferObj = rawBufferConstructor->NewInstance(sizeof(argv)/sizeof(argv[0]), argv);
 
     info.GetReturnValue().Set(rawBufferObj);
   }
 
-  RawBuffer(size_t size) : arrayBuffer(Isolate::GetCurrent(), ArrayBuffer::New(Isolate::GetCurrent(), new unsigned char[size], size)) {}
-  RawBuffer(Local<ArrayBuffer> arrayBuffer) : arrayBuffer(Isolate::GetCurrent(), arrayBuffer) {}
+  RawBuffer(uintptr_t address, size_t size) : address(address), size(size) {}
+  RawBuffer(Local<ArrayBuffer> arrayBuffer) : address((uintptr_t)arrayBuffer->GetContents().Data()), size(arrayBuffer->ByteLength()) {}
   ~RawBuffer() {
-    Local<ArrayBuffer> arrayBuffer = Nan::New(this->arrayBuffer);
-    if (!arrayBuffer.IsEmpty() && arrayBuffer->IsExternal()) {
-      free(arrayBuffer->GetContents().Data());
+    if (owned) {
+      free((void *)address);
     }
   }
 
 private:
-  Persistent<ArrayBuffer> arrayBuffer;
+  uintptr_t address;
+  size_t size;
+  bool owned = true;
 };
 
 void Init(Handle<Object> exports) {
