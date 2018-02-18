@@ -36,8 +36,12 @@ public:
     Local<Function> fromAddressFn = Nan::New<Function>(RawBuffer::FromAddress);
     fromAddressFn->Set(JS_STR("RawBuffer"), ctorFn);
     ctorFn->Set(JS_STR("fromAddress"), fromAddressFn);
+    
     uintptr_t initFunctionAddress = (uintptr_t)Init;
-    ctorFn->Set(JS_STR("initFunctionAddress"), Nan::New<Number>(*reinterpret_cast<double*>(&initFunctionAddress)));
+    Local<Array> initFunctionAddressArray = Nan::New<Array>(2);
+    initFunctionAddressArray->Set(0, Nan::New<Integer>((uint32_t)(initFunctionAddress >> 32)));
+    initFunctionAddressArray->Set(1, Nan::New<Integer>((uint32_t)(initFunctionAddress & 0xFFFFFFFF)));
+    ctorFn->Set(JS_STR("initFunctionAddress"), initFunctionAddressArray);
 
     return scope.Escape(ctorFn);
   }
