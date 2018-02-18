@@ -1,6 +1,6 @@
 {
   "name": "raw-buffer",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Raw memory buffers for node",
   "main": "index.js",
   "scripts": {
