@@ -36,7 +36,7 @@ public:
     Local<Function> fromAddressFn = Nan::New<Function>(RawBuffer::FromAddress);
     fromAddressFn->Set(JS_STR("RawBuffer"), ctorFn);
     ctorFn->Set(JS_STR("fromAddress"), fromAddressFn);
-    
+
     uintptr_t initFunctionAddress = (uintptr_t)Init;
     Local<Array> initFunctionAddressArray = Nan::New<Array>(2);
     initFunctionAddressArray->Set(0, Nan::New<Integer>((uint32_t)(initFunctionAddress >> 32)));

@@ -1,22 +1,52 @@
 {
-  "name": "raw-buffer",
-  "version": "0.0.10",
-  "description": "Raw memory buffers for node",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "_from": "raw-buffer@0.0.10",
+  "_id": "raw-buffer@0.0.10",
+  "_inBundle": false,
+  "_integrity": "sha512-zS8/ZBtv4YPd1zV1nPvgOWQdVF6KsHE0jXc7NFEof/ZoAoFj16CCRgVOiti3F++ZX6AZnkXNenWdwqh8HvURNw==",
+  "_location": "/raw-buffer",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "raw-buffer@0.0.10",
+    "name": "raw-buffer",
+    "escapedName": "raw-buffer",
+    "rawSpec": "0.0.10",
+    "saveSpec": null,
+    "fetchSpec": "0.0.10"
   },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/raw-buffer/-/raw-buffer-0.0.10.tgz",
+  "_shasum": "f588042f1cdc97350e8cfb08ca173b89d5d9c85b",
+  "_spec": "raw-buffer@0.0.10",
+  "_where": "C:\\Users\\Ultimus\\Documents\\GitHub\\exokit-windows\\node_modules\\child-process-thread",
+  "author": {
+    "name": "Avaer Kazmer",
+    "email": "a@modules.io"
+  },
+  "bugs": {
+    "url": "https://github.com/modulesio/raw-buffer/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "nan": "^2.8.0"
+  },
+  "deprecated": false,
+  "description": "Raw memory buffers for node",
+  "gypfile": true,
+  "homepage": "https://github.com/modulesio/raw-buffer#readme",
+  "license": "ISC",
+  "main": "index.js",
+  "name": "raw-buffer",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/modulesio/raw-buffer.git"
   },
-  "author": "Avaer Kazmer <a@modules.io>",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/modulesio/raw-buffer/issues"
+  "scripts": {
+    "install": "node-gyp rebuild",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "homepage": "https://github.com/modulesio/raw-buffer#readme",
-  "dependencies": {
-    "nan": "^2.8.0"
-  }
+  "version": "0.0.10"
 }
