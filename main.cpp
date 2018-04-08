@@ -34,6 +34,7 @@ public:
     Local<Function> ctorFn = ctor->GetFunction();
 
     Local<Function> fromAddressFn = Nan::New<Function>(RawBuffer::FromAddress);
+    fromAddressFn->Set(JS_STR("RawBuffer"), ctorFn);
     ctorFn->Set(JS_STR("fromAddress"), fromAddressFn);
 
     uintptr_t initFunctionAddress = (uintptr_t)Init;
@@ -132,14 +133,14 @@ protected:
   static NAN_METHOD(FromAddress) {
     Local<Array> array = Local<Array>::Cast(info[0]);
     
-    Local<Function> rawBufferConstructor = Local<Function>::Cast(info.This());
+    Local<Function> rawBufferConstructor = Local<Function>::Cast(info.Callee()->Get(JS_STR("RawBuffer")));
     Local<Value> argv[] = {
       array->Get(0),
       array->Get(1),
       array->Get(2),
       array->Get(3),
     };
-    Local<Value> rawBufferObj = rawBufferConstructor->NewInstance(Isolate::GetCurrent()->GetCurrentContext(), sizeof(argv)/sizeof(argv[0]), argv).ToLocalChecked();
+    Local<Value> rawBufferObj = rawBufferConstructor->NewInstance(sizeof(argv)/sizeof(argv[0]), argv);
 
     info.GetReturnValue().Set(rawBufferObj);
   }
