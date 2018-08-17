@@ -9,9 +9,12 @@
           "<!(node -e \"require('nan')\")"
       ],
       "conditions" : [
-	['OS=="android"', {
-	  "cflags_cc":["-fPIC"],
-	}],
+        ['LUMIN=="true"', {
+          'defines': ['LUMIN'],
+        }],
+        ['OS=="android"', {
+          "cflags_cc":["-fPIC"],
+        }],
       ],
     }
   ]

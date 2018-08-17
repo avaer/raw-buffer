@@ -162,6 +162,14 @@ void Init(Handle<Object> exports) {
   exports->Set(JS_STR("RawBuffer"), RawBuffer::Initialize());
 }
 
-NODE_MODULE(NODE_GYP_MODULE_NAME, Init)
-
 }
+
+#ifndef LUMIN
+NODE_MODULE(NODE_GYP_MODULE_NAME, rawBuffer::Init)
+#else
+extern "C" {
+  void node_register_module_raw_buffer(Local<Object> exports, Local<Value> module, Local<Context> context) {
+    rawBuffer::Init(exports);
+  }
+}
+#endif
