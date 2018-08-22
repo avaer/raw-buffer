@@ -12,8 +12,9 @@
         ['"<!(echo $LUMIN)"=="1"', {
           'defines': ['LUMIN'],
         }],
-        ['OS=="android"', {
+        ['"<!(echo $ANDROID)"=="1"', {
           "cflags_cc":["-fPIC"],
+          'defines': ['ANDROID'],
         }],
       ],
     }
