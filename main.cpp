@@ -65,6 +65,14 @@ protected:
       }
       RawBuffer *rawBuffer = new RawBuffer(arrayBuffer);
       rawBuffer->Wrap(rawBufferObj);
+    } else if (info[0]->IsSharedArrayBuffer()) {
+
+      Local<SharedArrayBuffer> arrayBuffer = Local<SharedArrayBuffer>::Cast(info[0]);
+      if (!arrayBuffer->IsExternal()) {
+        arrayBuffer->Externalize();
+      }
+      RawBuffer *rawBuffer = new RawBuffer(arrayBuffer);
+      rawBuffer->Wrap(rawBufferObj);
     } else {
       Nan::ThrowError("Invalid arguments");
     }
@@ -146,6 +154,7 @@ protected:
 
   RawBuffer(uintptr_t address, size_t size) : address(address), size(size) {}
   RawBuffer(Local<ArrayBuffer> arrayBuffer) : address((uintptr_t)arrayBuffer->GetContents().Data()), size(arrayBuffer->ByteLength()) {}
+  RawBuffer(Local<SharedArrayBuffer> arrayBuffer) : address((uintptr_t)arrayBuffer->GetContents().Data()), size(arrayBuffer->ByteLength()) {}
   ~RawBuffer() {
     if (owned) {
       free((void *)address);
