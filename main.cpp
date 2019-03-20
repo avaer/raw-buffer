@@ -9,13 +9,19 @@ using namespace v8;
 #define JS_FLOAT(val) Nan::New<v8::Number>(val)
 #define JS_BOOL(val) Nan::New<v8::Boolean>(val)
 
+#define TO_NUM(x) (Nan::To<double>(x).FromJust())
+#define TO_BOOL(x) (Nan::To<bool>(x).FromJust())
+#define TO_UINT32(x) (Nan::To<unsigned int>(x).FromJust())
+#define TO_INT32(x) (Nan::To<int>(x).FromJust())
+#define TO_FLOAT(x) (Nan::To<float>(x).FromJust())
+
 namespace rawBuffer {
 
-void Init(Handle<Object> exports);
+void Init(Local<Object> exports);
 
 class RawBuffer : public Nan::ObjectWrap {
 public:
-  static Handle<Object> Initialize() {
+  static Local<Object> Initialize() {
     Nan::EscapableHandleScope scope;
 
     // constructor
@@ -31,7 +37,7 @@ public:
     Local<ObjectTemplate> proto = ctor->PrototypeTemplate();
     Nan::SetAccessor(proto, JS_STR("length"), RawBuffer::Length);
 
-    Local<Function> ctorFn = ctor->GetFunction();
+    Local<Function> ctorFn = Nan::GetFunction(ctor).ToLocalChecked();
 
     Local<Function> fromAddressFn = Nan::New<Function>(RawBuffer::FromAddress);
     ctorFn->Set(JS_STR("fromAddress"), fromAddressFn);
@@ -52,8 +58,8 @@ protected:
     Local<Object> rawBufferObj = info.This();
 
     if (info[0]->IsNumber() && info[1]->IsNumber() && info[2]->IsNumber() && info[3]->IsNumber()) {
-      uintptr_t address = ((uint64_t)info[0]->Uint32Value() << 32) | ((uint64_t)info[1]->Uint32Value());
-      size_t size = ((uint64_t)info[2]->Uint32Value() << 32) | ((uint64_t)info[3]->Uint32Value());
+      uintptr_t address = ((uint64_t)TO_UINT32(info[0]) << 32) | ((uint64_t)TO_UINT32(info[1]));
+      size_t size = ((uint64_t)TO_UINT32(info[2]) << 32) | ((uint64_t)TO_UINT32(info[3]));
       
       RawBuffer *rawBuffer = new RawBuffer(address, size);
       rawBuffer->Wrap(rawBufferObj);
@@ -121,7 +127,7 @@ protected:
       if (array->Get(0)->IsNumber() && array->Get(1)->IsNumber()) {
         RawBuffer *rawBuffer = ObjectWrap::Unwrap<RawBuffer>(info.This());
 
-        info.GetReturnValue().Set(Nan::New<Boolean>(array->Get(0)->Uint32Value() == (uint32_t)(rawBuffer->address >> 32) && array->Get(1)->Uint32Value() == (uint32_t)(rawBuffer->address & 0xFFFFFFFF)));
+        info.GetReturnValue().Set(Nan::New<Boolean>(TO_UINT32(array->Get(0)) == (uint32_t)(rawBuffer->address >> 32) && TO_UINT32(array->Get(1)) == (uint32_t)(rawBuffer->address & 0xFFFFFFFF)));
       } else {
         info.GetReturnValue().Set(Nan::New<Boolean>(false));
       }
@@ -158,7 +164,7 @@ private:
   bool owned = true;
 };
 
-void Init(Handle<Object> exports) {
+void Init(Local<Object> exports) {
   exports->Set(JS_STR("RawBuffer"), RawBuffer::Initialize());
 }
 
