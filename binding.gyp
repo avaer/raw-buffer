@@ -13,7 +13,7 @@
           'defines': ['LUMIN'],
         }],
         ['"<!(echo $ANDROID)"=="1"', {
-          "cflags_cc":["-fPIC"],
+          # "cflags_cc":["-fPIC"],
           'defines': ['ANDROID'],
         }],
       ],
