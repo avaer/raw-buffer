@@ -170,7 +170,7 @@ void Init(Local<Object> exports) {
 
 }
 
-#ifndef LUMIN
+#if !defined(ANDROID) && !defined(LUMIN)
 NODE_MODULE(NODE_GYP_MODULE_NAME, rawBuffer::Init)
 #else
 extern "C" {
